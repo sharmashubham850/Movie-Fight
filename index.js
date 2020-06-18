@@ -27,8 +27,7 @@ const dropdown = document.querySelector('.dropdown');
 const resultWrapper = document.querySelector('.results');
 
 async function onInput(event) {
-    const inputValue = event.target.value;
-    const movies = await fetchData(inputValue);
+    const movies = await fetchData(event.target.value);
 
     if (movies.length === 0) {
         dropdown.classList.remove('is-active');
@@ -39,17 +38,24 @@ async function onInput(event) {
     resultWrapper.innerHTML = '';
 
     for (let movie of movies) {
-        const item = document.createElement('a');
-        item.classList.add('dropdown-item');
+        const option = document.createElement('a');
+        option.classList.add('dropdown-item');
 
         const imgSrc = movie.Poster === 'N/A' ? '' : movie.Poster;
 
-        item.innerHTML = `
+        option.innerHTML = `
             <img src="${imgSrc}">
             ${movie.Title} (${movie.Year})
         `;
 
-        resultWrapper.appendChild(item);
+        option.addEventListener('click', () => {
+            dropdown.classList.remove('is-active');
+            input.value = movie.Title;
+
+            onMovieSelect(movie);
+        });
+
+        resultWrapper.appendChild(option);
     }
 
 
@@ -63,3 +69,54 @@ document.addEventListener('click', event => {
         dropdown.classList.remove('is-active');
     }
 });
+
+async function onMovieSelect(movie) {
+    const response = await axios.get('http://www.omdbapi.com/', {
+        params: {
+            apikey: '424db95',
+            i: movie.imdbID
+        }
+    });
+
+    document.querySelector('#summary').innerHTML = movieTemplate(response.data);
+}
+
+function movieTemplate(movieDetail) {
+    return `
+        <article class="media">
+            <figure class="media-left">
+                <p class="image">
+                    <img src="${movieDetail.Poster}">
+                </p>
+            </figure>
+            <div class="media-content">
+                <div class="content">
+                    <h1>${movieDetail.Title}</h1>
+                    <h4>${movieDetail.Genre}</h4>
+                    <p>${movieDetail.Plot}</p>
+                </div>
+            </div>
+        </article>
+
+        <article class="notification is-primary">
+            <p class="title">${movieDetail.Awards}</p>
+            <p class="subtitle">Awards</p>
+        </article>
+        <article class="notification is-primary">
+            <p class="title">${movieDetail.BoxOffice}</p>
+            <p class="subtitle">Box Office</p>
+        </article>
+        <article class="notification is-primary">
+            <p class="title">${movieDetail.Metascore}</p>
+            <p class="subtitle">Metascore</p>
+        </article>
+        <article class="notification is-primary">
+            <p class="title">${movieDetail.imdbRating}</p>
+            <p class="subtitle">IMDB Rating</p>
+        </article>
+        <article class="notification is-primary">
+            <p class="title">${movieDetail.imdbVotes}</p>
+            <p class="subtitle">IMDB Votes</p>
+        </article>
+    `;
+}
