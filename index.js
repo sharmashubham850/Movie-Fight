@@ -72,8 +72,8 @@ function runComparision() {
         const leftStat = leftSideStats[i];
         const rightStat = rightSideStats[i];
 
-        const leftSideValue = leftStat.dataset.value;
-        const rightSideValue = rightStat.dataset.value;
+        const leftSideValue = parseFloat(leftStat.dataset.value);
+        const rightSideValue = parseFloat(rightStat.dataset.value);
 
         // console.log(leftSideValue, rightSideValue);
 
