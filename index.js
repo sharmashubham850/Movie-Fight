@@ -28,7 +28,7 @@ createAutocomplete({
     ...autoCompleteConfig,
     onOptionSelect(movie) {
         document.querySelector('.tutorial').classList.add('is-hidden');
-        onMovieSelect(movie, document.querySelector('#left-summary'));
+        onMovieSelect(movie, document.querySelector('#left-summary'), 'left');
     }
 })
 
@@ -37,11 +37,14 @@ createAutocomplete({
     ...autoCompleteConfig,
     onOptionSelect(movie) {
         document.querySelector('.tutorial').classList.add('is-hidden');
-        onMovieSelect(movie, document.querySelector('#right-summary'));
+        onMovieSelect(movie, document.querySelector('#right-summary'), 'right');
     }
 })
 
-async function onMovieSelect(movie, summaryElement) {
+let leftMovieFetched;
+let rightMovieFetched;
+
+async function onMovieSelect(movie, summaryElement, side) {
     const response = await axios.get('http://www.omdbapi.com/', {
         params: {
             apikey: '424db95',
@@ -50,9 +53,55 @@ async function onMovieSelect(movie, summaryElement) {
     });
 
     summaryElement.innerHTML = movieTemplate(response.data);
+
+    if (side === 'left') leftMovieFetched = true;
+    else rightMovieFetched = true;
+
+    // Run comparision after both movie data received
+    if (leftMovieFetched && rightMovieFetched) {
+        runComparision();
+    }
+
+}
+
+function runComparision() {
+    const leftSideStats = document.querySelectorAll('#left-summary .notification');
+    const rightSideStats = document.querySelectorAll('#right-summary .notification');
+
+    for (let i = 0; i < leftSideStats.length; i++) {
+        const leftStat = leftSideStats[i];
+        const rightStat = rightSideStats[i];
+
+        const leftSideValue = leftStat.dataset.value;
+        const rightSideValue = rightStat.dataset.value;
+
+        // console.log(leftSideValue, rightSideValue);
+
+        if (leftSideValue > rightSideValue) {
+            // Make right stat yellow
+            rightStat.classList.replace('is-primary', 'is-warning');
+        }
+        else {
+            // Make left stat yellow
+            leftStat.classList.replace('is-primary', 'is-warning');
+        }
+    }
 }
 
 function movieTemplate(movieDetail) {
+    // Parsing movie stats
+    let awards = 0;
+    for (let word of movieDetail.Awards.split(' ')) {
+        const value = parseInt(word);
+
+        if (isNaN(value)) continue;
+        else awards += value;
+    }
+    const dollars = parseInt(movieDetail.BoxOffice.slice(1).replace(/,/g, ''));
+    const metascore = parseInt(movieDetail.Metascore);
+    const imdbRating = parseFloat(movieDetail.imdbRating);
+    const imdbVotes = parseInt(movieDetail.imdbVotes.replace(/,/g, ''));
+
     return `
         <article class="media">
             <figure class="media-left">
@@ -69,23 +118,23 @@ function movieTemplate(movieDetail) {
             </div>
         </article>
 
-        <article class="notification is-primary">
+        <article data-value=${awards} class="notification is-primary">
             <p class="title">${movieDetail.Awards}</p>
             <p class="subtitle">Awards</p>
         </article>
-        <article class="notification is-primary">
+        <article data-value=${dollars} class="notification is-primary">
             <p class="title">${movieDetail.BoxOffice}</p>
             <p class="subtitle">Box Office</p>
         </article>
-        <article class="notification is-primary">
+        <article data-value=${metascore} class="notification is-primary">
             <p class="title">${movieDetail.Metascore}</p>
             <p class="subtitle">Metascore</p>
         </article>
-        <article class="notification is-primary">
+        <article data-value=${imdbRating} class="notification is-primary">
             <p class="title">${movieDetail.imdbRating}</p>
             <p class="subtitle">IMDB Rating</p>
         </article>
-        <article class="notification is-primary">
+        <article data-value=${imdbVotes} class="notification is-primary">
             <p class="title">${movieDetail.imdbVotes}</p>
             <p class="subtitle">IMDB Votes</p>
         </article>
